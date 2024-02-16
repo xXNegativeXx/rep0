@@ -1,0 +1,111 @@
+# Импорт необходимых библиотек и пакетов
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as mpl
+from matplotlib import colors
+import folium
+
+# Создание dataframe из csv-файла
+datafile = 'Map-Crime_Incidents-Previous_Three_Months.csv'
+df = pd.read_csv(datafile)
+
+# Настройка числа отображаемых строк
+pd.set_option('display.max_rows', 5)
+print(df, '\n')
+
+# Вывод названий столбцов dataframe
+print('Названия столбцов:')
+print(df.columns, '\n')
+
+# Вывод количества строк dataframe
+print('Количество строк: ', len(df), '\n')
+
+# Создание столбцов Month и Day на основе данных столбца Date
+df['Month'] = df['Date'].apply(lambda row: int(row[0:2]))
+df['Day'] = df['Date'].apply(lambda row: int(row[3:5]))
+print('Проверка столбцов Month и Day:')
+print(df['Month'][0:2], '\n')
+print(df['Day'][0:2], '\n')
+
+# Удаление столбцов IncidntNum и Location
+del df['IncidntNum']
+df.drop('Location', axis=1, inplace=True)
+# Вывод названий столбцов dataframe
+print('Названия столбцов:')
+print(df.columns, '\n')
+
+# Вывод количества преступлений по категориям
+category_counts = df['Category'].value_counts()
+print('Количество преступлений по категориям:')
+print(category_counts, '\n')
+
+# Вывод наиболее часто совершаемых преступлений
+print('Наиболее частый тип преступлений:')
+print(category_counts[category_counts.isin([max(category_counts)])], '\n')
+
+# Вывод количества преступлений по округам
+print('Количество преступлений по округам:')
+pddistrict_counts = df['PdDistrict'].value_counts()
+print(pddistrict_counts, '\n')
+
+# Определение количества преступлений за август
+AC = df[df['Month'] == 8]
+print('Всего преступлений за август: ', len(AC), '\n')
+ACB = df.query('Month == 8 and Category == "BURGLARY"')
+print('Количество преступлений типа BURGLARY за август: ', len(ACB), '\n')
+
+# Определение количества преступлений определённого типа за всё время
+CB = df[df['Category'] == 'BURGLARY']
+print('Количество преступлений типа BURGLARY за всё время: ', len(CB), '\n')
+
+# Список преступлений в конкретный день конкретного месяца
+MD = df.query('Month == 7 and Day == 4')
+print('Преступления за 4 июля: ')
+print(MD, '\n')
+
+# Создание списка уникальных значений административных округов
+df_dist = np.unique(df['PdDistrict'])
+# Каждый административный округ получает своё уникальное значение
+df_dist_lev = dict(zip(df_dist, range(len(df_dist))))
+print('Список значений округов:')
+print(df_dist_lev, '\n')
+# Присвоение цвета каждому округу
+df_dist_col = dict(zip(df_dist, list(colors.cnames.values())[0:-1:len(df_dist)]))
+print('Список значений цвета каждого округа:')
+print(df_dist_col, '\n')
+# Создание столбца, содержащего значения кадого округа
+df['DfDistCode'] = df['PdDistrict'].apply(lambda row: df_dist_lev[row])
+print('Dataframe:')
+print(df, '\n')
+
+# Настройка карты folium
+map_osm = folium.Map(location=[df['Y'].mean(), df['Y'].mean()], zoom_start=12)
+plotEvery = 50
+obs = list(zip(df['Y'], df['X'], df['PdDistrict']))
+for el in obs[0:-1:plotEvery]:
+    folium.CircleMarker(el[0:2], color=df_dist_col[el[2]], fill_color=el[2], radius=10).add_to(map_osm)
+
+# Сохранение карты в папке проекта
+map_osm.save('output.html')
+print('Карта сохранена.', '\n')
+
+# Для ответов на контрольные вопросы
+print('_____ОТВЕТЫ НА КОНТРОЛЬНЫЕ ВОПРОСЫ_____', '\n')
+print('Количество административных округов: ', len(df_dist), '\n')
+print('Три административных округа с наибольшей преступностью:')
+print(pddistrict_counts[0:3], '\n')
+print('Три наиболее частых вида преступлений:')
+print(category_counts[0:3], '\n')
+print('Назначение Лямбда-функции:')
+print('Лямбда-функции позволяют указывать функцию без использования def и без определения конкретного имени для неё.',
+      '\n', 'Лямбда-функции могут иметь любое количество аргументов, но выражение только одно.', '\n')
+print('Виды преступлений, совершаемых в Сан-Франциско:')
+df_category = np.unique(df['Category'])
+print(df_category)
+
+
+
+
+
+
+
